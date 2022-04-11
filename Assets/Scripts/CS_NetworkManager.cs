@@ -695,6 +695,10 @@ public class CS_NetworkManager : MonoBehaviour
         Array.Clear(SocketObj.SendBuffer, 0, SocketObj.SendBuffer.Length);
     }
 
+    /// <summary>
+    /// Manages when client receives data from the server
+    /// </summary>
+    /// <param name="result"></param>Asynchronous data
     private void OnClientReceivesTCPData(IAsyncResult result)
     {
         if (IsDebugMode)
@@ -954,6 +958,9 @@ public class CS_NetworkManager : MonoBehaviour
         AddDataToQueue(ref ClientObject, Buffer);
     }
 
+    /// <summary>
+    /// Adds ready to start updating with the server in the message queue
+    /// </summary>
     public void AddReadyToUpdateToQueue()
     {
         byte[] Buffer = new byte[HeaderMessageSize + ReadyToUpdateMessageSize];
@@ -2546,6 +2553,10 @@ public class CS_NetworkManager : MonoBehaviour
         return -1;
     }
 
+    /// <summary>
+    /// Removes socket object from the ready list sockets
+    /// </summary>
+    /// <param name="_netID"></param> Client net ID
     private void RemoveSocketFromReadySockets(int _netID)
     {
         foreach(var item in ReadySockets)
