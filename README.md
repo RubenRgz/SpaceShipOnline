@@ -9,13 +9,13 @@
  * W key -> Shoot.
 
 ##Features:
- * 4 players co-op.
+ 4 players co-op.
 
 ##Requirements:
- * Two computers at least (One computer running the server version and the other the client version).
+ Two computers at least (One computer running the server version and the other the client version).
 
 ##Dev Features:
- * Winsock - Socket layer.
+ * Winsock - Socket layer (TCP, IPv4).
  * Unity Cloud Save.
  * Unity Analytics.
  * Message system.

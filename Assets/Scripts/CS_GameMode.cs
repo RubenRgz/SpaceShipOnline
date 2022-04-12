@@ -384,8 +384,7 @@ public class CS_GameMode : MonoBehaviour
                 CS_NetworkManager.Instance.SendGameStateMessage(EGameStates.GAME_OVER);
 
             // If all obstacles finished their path or died -> change stage
-            //Debug.Log(BubblesDone);
-            if (BubblesDone >= Levels[CurrentLevel].MaxNumOfObstacles)
+            if (BubblesDone >= MaxNumOfObstacles)
             {
                 // Check if we can advance or is game over
                 int NextLevel = CurrentLevel + 1;
@@ -600,21 +599,21 @@ public class CS_GameMode : MonoBehaviour
 
         //Level 1
         Data.ID = 1;
-        Data.MaxNumOfObstacles = 1;
+        Data.MaxNumOfObstacles = 3;
         Data.ObstaclesSpeed = 80.0f;
         Data.TimeToSpawnObstacle = 5.0f;
         Levels.Add(Data);
 
         // Level 2
         Data.ID = 2;
-        Data.MaxNumOfObstacles = 2;
+        Data.MaxNumOfObstacles = 5;
         Data.ObstaclesSpeed = 100.0f;
         Data.TimeToSpawnObstacle = 3.0f;
         Levels.Add(Data);
 
         // Level 3
         Data.ID = 3;
-        Data.MaxNumOfObstacles = 3;
+        Data.MaxNumOfObstacles = 10;
         Data.ObstaclesSpeed = 150.0f;
         Data.TimeToSpawnObstacle = 2.0f;
         Levels.Add(Data);

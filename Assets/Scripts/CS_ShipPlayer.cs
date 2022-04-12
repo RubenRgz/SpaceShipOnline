@@ -9,7 +9,7 @@ public class CS_ShipPlayer : MonoBehaviour
     public bool IsLocalPlayer { get; set; }
     public bool IsAlive { get; private set; }
 
-    float MovementSpeed = 4.0f;
+    float MovementSpeed = 5.0f;
     public GameObject BulletPrefab;
     public Transform BulletSpawnSocket;
     int Score = 0;
@@ -20,7 +20,7 @@ public class CS_ShipPlayer : MonoBehaviour
     bool IsInputBlocker = false;
     float TimeToResetInputBlocker = 1.0f; // seconds
     float DeltaTimeToResetInputBlocker = 0.0f;
-    float PositionLerpTime = 0.1f; // seconds
+    float PositionLerpTime = 0.05f; // seconds
     float DeltaLerpToServerPosition = 0.0f;
     float DeltaLerpToLocalPosition = 0.0f;
 
@@ -155,7 +155,11 @@ public class CS_ShipPlayer : MonoBehaviour
                 Vector2 Velocity = Direction * MovementSpeed * Time.fixedDeltaTime;
                 transform.position += new Vector3(Velocity.x, Velocity.y);
 
-                CS_NetworkManager.Instance.UpdatePosition(ID, transform.position);
+                if(transform.position != LastPosition)
+                {
+                    CS_NetworkManager.Instance.UpdatePosition(ID, transform.position);
+                    LastPosition = transform.position;
+                }
             }
 
             Direction = Vector2.zero;
@@ -184,15 +188,12 @@ public class CS_ShipPlayer : MonoBehaviour
         transform.position = _position;
         LastPosition = transform.position;
 
-        if (CS_NetworkManager.Instance.IsServer || IsLocalPlayer)
-        {
-            // Get HUD elements
-            GetPlayerHUD();
+        // Get HUD elements
+        GetPlayerHUD();
 
-            // Init HUD info
-            LivesHUD.text = "Lives: " + _numOfLives;
-            ScoreHUD.text = "Score: " + _score;
-        }
+        // Init HUD info
+        LivesHUD.text = "Lives: " + _numOfLives;
+        ScoreHUD.text = "Score: " + _score;        
 
         // Notify Network Manager that this player is ready to be updated
         if(CS_NetworkManager.Instance.IsClient && IsLocalPlayer)

@@ -97,7 +97,7 @@ public class CS_NetworkManager : MonoBehaviour
     [Range(1, 4)]
     public int NumOfClients = 1;
     public int MessageBufferSize = 1024;
-    public string ConnectAddress = "192.168.100.37";
+    string ConnectAddress = "192.168.100.37";
     // This is the local port use to start a connection with another machine (server)
     public int ConnectPort = 1025;
     // This is the port that will be listening for connections
@@ -122,7 +122,7 @@ public class CS_NetworkManager : MonoBehaviour
     float TimeToSendPing = 5.0f; // seconds
     float TimeToCheckSocketsActivity = 30.0f; // seconds
     float DeltaSyncTime = 0.0f;
-    float TimeToSynchronize = 25.0f; // seconds
+    float TimeToSynchronize = 15.0f; // seconds
 
     List<SocketObject> ServerSockets = new List<SocketObject>();
     List<SocketObject> ReadySockets = new List<SocketObject>();
@@ -144,7 +144,6 @@ public class CS_NetworkManager : MonoBehaviour
     //---------------------------------------------------------------------------------
     const int HeaderMessageSize = 8;
     const int SyncHeaderMessageSize = 12;
-    bool IsMenuVisible = true;
 
     //-----------------------------------------------------------------------------------------
     //-----------------------------------------------------------------------------------------
@@ -182,11 +181,11 @@ public class CS_NetworkManager : MonoBehaviour
     AsyncCallback OnServerSendsTCPCallBack;
     AsyncCallback OnServerReceivesTCPCallBack;
 
-    // TODO: Checar si son necesarios, ya que no puede acceder el cliente y el server al mismo tiempo
     // Actions
     public Action OnClientConnectedEvent;
     public Action OnClientFailedToConnectEvent;
     public Action OnClientDisconnectedEvent;
+    public Action OnServerStartedEvent;
     public Action OnServerClosedEvent;
     #endregion
 
@@ -215,6 +214,7 @@ public class CS_NetworkManager : MonoBehaviour
         OnClientConnectedEvent += OnClientConnectedHandler;
         OnClientFailedToConnectEvent += OnClientFailedToConnectHandler;
         OnClientDisconnectedEvent += OnClientDisconnectedHandler;
+        OnServerStartedEvent += OnServerStartedHandler;
         OnServerClosedEvent += OnServerClosedHandler;
 
         // Add pool package component
@@ -307,38 +307,40 @@ public class CS_NetworkManager : MonoBehaviour
         else if (IsClient)
             CloseTCPSocket(ref ClientObject);
     }
-
-    void OnGUI()
-    {
-        if (IsMenuVisible)
-        {
-            GUILayout.BeginArea(new Rect(10, 10, 200, 500));
-
-            GUILayout.Label("Select Network Mode", "TextField");
-
-            if (GUILayout.Button("Server")) CS_NetworkManager.Instance.StartServer();
-            if (GUILayout.Button("Client")) CS_NetworkManager.Instance.StartClient();
-
-            GUILayout.EndArea();
-        }
-        else if(!IsMenuVisible && IsServer)
-        {
-            GUILayout.BeginArea(new Rect(10, 10, 200, 500));
-
-            
-            GUILayout.EndArea();
-        }
-        else if (!IsMenuVisible && IsClient)
-        {
-            //GUILayout.BeginArea(new Rect(10, 10, 200, 500));
-
-
-            //GUILayout.EndArea();
-        }
-    }
     #endregion
 
     #region [Sockets Layer]
+    /// <summary>
+    /// Initializes the network connection as server or client
+    /// </summary>
+    /// <param name="_address"></param>Connect address
+    /// <param name="_isServer"></param>True if we want to run server logic
+    public void InitConnection(string _address, bool _isServer)
+    {
+        ConnectAddress = _address;
+
+        if (_isServer)
+            StartServer();
+        else
+            StartClient();
+    }
+
+    /// <summary>
+    /// Start server socket services
+    /// </summary>
+    private void StartServer()
+    {
+        StartTCPServerSocket();
+    }
+
+    /// <summary>
+    /// Start client socket services
+    /// </summary>
+    private void StartClient()
+    {
+        StartTCPClientSocket();
+    }
+
     /// <summary>
     /// Server sends data to a client
     /// </summary>
@@ -513,7 +515,7 @@ public class CS_NetworkManager : MonoBehaviour
                 ListeningSocket.Bind(IPPoint);
 
                 // Server starts
-                OnServerStarted();
+                OnServerStartedEvent?.Invoke();
             }
             catch (SocketException e)
             {
@@ -804,21 +806,9 @@ public class CS_NetworkManager : MonoBehaviour
             // Remove from socket list
             ServerSockets.Remove(SocketObj);
 
-            //TODO: Posiblemente tenga que enviar evento
-            //a los sockets restantes de que alguien se fue para eliminarlo
+            // TODO: Posiblemente tenga que enviar evento
+            // a los sockets restantes de que alguien se fue para eliminarlo
         }
-    }
-
-    /// <summary>
-    /// Manages when the server is online
-    /// </summary>
-    private void OnServerStarted()
-    {
-        if (IsConnectionDebug)
-            Debug.Log("Server Started");
-
-        // Set server flag as true
-        IsServer = true;
     }
 
     /// <summary>
@@ -1005,7 +995,7 @@ public class CS_NetworkManager : MonoBehaviour
     /// <param name="_bubbleID"></param>Bubble ID
     public void SendBulletCollisionMessage(int _playerID, uint _bulletID, uint _bubbleID)
     {
-        //if (IsDebugMode)
+        if (IsDebugMode)
             Debug.Log("Collision Data -> Player ID: " + _playerID + " bullet ID: " + _bulletID + " bubble ID: " + _bubbleID);
 
         // Send bullet collision in all clients
@@ -1013,7 +1003,6 @@ public class CS_NetworkManager : MonoBehaviour
 
         if (PlayerNetID != -1)
         {
-            Debug.Log("Send bullet collision");
             SendBulletCollisionMulticast(PlayerNetID, _bulletID, _bubbleID);
 
             // Bullet collision in server
@@ -1029,14 +1018,13 @@ public class CS_NetworkManager : MonoBehaviour
     /// <param name="_bubbleID"></param>Bubble ID
     public void SendShipCollisionMessage(int _playerID, uint _bubbleID)
     {
-        //if (IsDebugMode)
+        if (IsDebugMode)
             Debug.Log("Collision Data-> Player ID: " + _playerID + " bubble ID: " + _bubbleID);
 
         int CollidedShipNetID = GetNetIDByGameID(_playerID);
 
         if(CollidedShipNetID != -1)
         {
-            Debug.Log("Send ship collision");
             SPlayerData PlayerData = Players[CollidedShipNetID];
 
             // Update sync lives
@@ -1290,8 +1278,8 @@ public class CS_NetworkManager : MonoBehaviour
                         }
                         else if (DataType == (int)ENetToken.ClientLimitReached)
                         {
-                            // TODO: Poner un mensaje en el canvas para avisar al jugador que ya se llego al maximo de clientes permitidos
-                            // y que lo intentes en unos minutos mas
+                            // TODO: Poner un mensaje en el canvas para avisar al jugador que ya se llego al maximo
+                            // de clientes permitidos y que lo intentes en unos minutos mas
 
                             // Close client socket
                             CloseTCPSocket(ref ClientObject);
@@ -1299,10 +1287,10 @@ public class CS_NetworkManager : MonoBehaviour
                         else if (DataType == (int)ENetToken.Synchronize)
                         {
                             // Create all the clients connected
-                            int NumOfClients = BitConverter.ToInt32(Data, Index);
+                            int NumberOfClients = BitConverter.ToInt32(Data, Index);
                             Index += sizeof(int);
 
-                            for (int k = 0; k < NumOfClients; ++k)
+                            for (int k = 0; k < NumberOfClients; ++k)
                             {
                                 int ClientNetID = BitConverter.ToInt32(Data, Index);
                                 Index += sizeof(int);
@@ -2281,6 +2269,7 @@ public class CS_NetworkManager : MonoBehaviour
 
         if(ClientNetID != -1)
         {
+            // Update sync data
             SPlayerData Data = Players[ClientNetID];
             Data.Position = _position;
             Players[ClientNetID] = Data;
@@ -2492,6 +2481,18 @@ public class CS_NetworkManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Handles server start up
+    /// </summary>
+    void OnServerStartedHandler()
+    {
+        if (IsConnectionDebug)
+            Debug.Log("Server Started");
+
+        // Set server flag as true
+        IsServer = true;
+    }
+
+    /// <summary>
     /// Handles server shut down
     /// </summary>
     void OnServerClosedHandler()
@@ -2499,24 +2500,6 @@ public class CS_NetworkManager : MonoBehaviour
         if (IsConnectionDebug)
             Debug.Log("Server Shuts Down");
         IsConnected = false;
-    }
-    #endregion
-
-    #region [GUI Callback Functions]
-    public void StartServer()
-    {
-        // Hide menu
-        IsMenuVisible = false;
-
-        StartTCPServerSocket();
-    }
-
-    public void StartClient()
-    {
-        // Hide Menu 
-        IsMenuVisible = false;
-        
-        StartTCPClientSocket();
     }
     #endregion
 
