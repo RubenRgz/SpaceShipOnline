@@ -12,7 +12,7 @@
  4 players co-op.
 
 ##Requirements:
- Two computers at least (One computer running the server version and the other the client version).
+ One instance running the server version and the others the client version
 
 ##Dev Features:
  * Winsock - Socket layer (TCP, IPv4).
@@ -30,4 +30,4 @@
  * Only tested in local network.
 
 ## Developer:
- Rubén Rodríguez Serrano
+ RubÃ©n RodrÃ­guez Serrano
